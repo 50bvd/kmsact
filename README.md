@@ -13,5 +13,5 @@ Type on your terminal `slmgr /dlv`
 
 You will have the information about your license as on this example :arrow_heading_down:
 
-[!(/icon/slmgrdlv.png)](https://learn.microsoft.com/en-us/windows-server/get-started/kms-client-activation-keys)
+[![slmgrdlv](/icon/slmgrdlv.png)](https://learn.microsoft.com/en-us/windows-server/get-started/kms-client-activation-keys)
    
