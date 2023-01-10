@@ -5,4 +5,13 @@
 1. Download kmsact.ps1
 2. right click and run with powershellRight Click and execute with PowerShell
 3. wait a few seconds before activation
+
+# Note
+You have to restart the script after 180 days because the liscences are valid for 180 days.
+
+Type on your terminal `slmgr /dlv` 
+
+You will have the information about your license as on this example :arrow_heading_down:
+
+[https://learn.microsoft.com/en-us/windows-server/get-started/kms-client-activation-keys](/icon/slmgrdlv.png)
    
