@@ -1,0 +1,2 @@
+# kmsact
+Windows/Office activator
