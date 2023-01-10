@@ -3,7 +3,7 @@
 
 # To execute the script
 1. Download kmsact.ps1
-2. right click and run with powershellRight Click and execute with PowerShell
+2. right click and run with powershell Right Click and execute with PowerShell
 3. wait a few seconds before activation
 
 # Note
