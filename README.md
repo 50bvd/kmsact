@@ -7,7 +7,7 @@
 3. wait a few seconds before activation
 
 # Note
-You have to restart the script after 180 days because the liscences are valid for 180 days.
+You have to restart the script after 180 days because the liscences are valid for 180 days. *you can create a schedule to run the script every 180 days*
 
 Type on your terminal `slmgr /dlv` 
 
