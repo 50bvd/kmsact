@@ -3,8 +3,9 @@
 
 # To execute the script
 1. Download kmsact.ps1
-2. right click and run with powershell Right Click and execute with PowerShell
-3. wait a few seconds before activation
+2. Launch a PowerShell terminal as administrator, and accept the execution of the scripts with this command `Set-ExecutionPolicy Bypass`. 
+3. right click and run with powershell Right Click and execute with PowerShell
+4. wait a few seconds before activation
 
 # Note
 You have to restart the script after 180 days because the liscences are valid for 180 days. *you can create a schedule to run the script every 180 days*
