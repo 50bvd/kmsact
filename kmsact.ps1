@@ -6,7 +6,7 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 $WindowsKey = "NPPR9-FWDCX-D2C8J-H872K-2YT43"
 $OfficeKey = "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH"
-$KMSserver = "kms.digiboy.ir"
+$KMSserver = "50bvd.com"
 
 Write-Host "
   ___                       ___  
