@@ -23,6 +23,8 @@ if ($Answer -eq "W") {
     slmgr /skms $KMSserver
     slmgr /ato
 } elseif ($Answer -eq "O") {
+    for /f %x in ('dir /b ..\root\Licenses16\ProPlus2021VL_KMS*.xrm-ms') do cscript ospp.vbs /inslic:"..\root\Licenses16\%x"
+    cscript ospp.vbs /unpkey:6F7TH >nul
     cscript "C:\Program Files (x86)\Microsoft Office\Office16\ospp.vbs" /inpkey:$OfficeKey
     cscript "C:\Program Files (x86)\Microsoft Office\Office16\ospp.vbs" /sethst:$KMSserver
     cscript "C:\Program Files (x86)\Microsoft Office\Office16\ospp.vbs" /act
@@ -31,6 +33,8 @@ if ($Answer -eq "W") {
     slmgr /skms $KMSserver
     slmgr /ato
 
+    for /f %x in ('dir /b ..\root\Licenses16\ProPlus2021VL_KMS*.xrm-ms') do cscript ospp.vbs /inslic:"..\root\Licenses16\%x"
+    cscript ospp.vbs /unpkey:6F7TH >nul
     cscript "C:\Program Files (x86)\Microsoft Office\Office16\ospp.vbs" /inpkey:$OfficeKey
     cscript "C:\Program Files (x86)\Microsoft Office\Office16\ospp.vbs" /sethst:$KMSserver
     cscript "C:\Program Files (x86)\Microsoft Office\Office16\ospp.vbs" /act
