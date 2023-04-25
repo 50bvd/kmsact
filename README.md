@@ -6,6 +6,8 @@
 2. right click and execute with PowerShell
 3. wait a few seconds before activation
 
+_See https://50bvd.com/posts/Activation-de-Windows-&-Office/_
+
 # Note
 You have to restart the script after 180 days because the liscences are valid for 180 days. *you can create a schedule to run the `slmgr /rearm` every 180 days*
 
