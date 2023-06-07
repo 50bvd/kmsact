@@ -9,7 +9,7 @@ $WindowsKey = "NPPR9-FWDCX-D2C8J-H872K-2YT43"
 $OfficeKey = "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH"
 $KMSserver = "50bvd.com"
 $Answer = Read-Host "Do you want to install Windows key, Office key or both? (W/O/B)"
-#wonderfull ascii art
+#wonderfull ascii art 
 Write-Host "
   ___                       ___  
  (o o)                     (o o) 
