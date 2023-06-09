@@ -4,11 +4,6 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Start-Process powershell -Verb runAs -ArgumentList $arguments
     exit
 }
-#var
-$WindowsKey = "NPPR9-FWDCX-D2C8J-H872K-2YT43"
-$OfficeKey = "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH"
-$KMSserver = "YOUR_KMS_SRV" #replace with your kms srv
-$Answer = Read-Host "Do you want to install Windows key, Office key or both? (W/O/B)"
 #wonderfull ascii art 
 Write-Host "
   ___                       ___  
@@ -17,6 +12,11 @@ Write-Host "
 --m-m-----------------------m-m--
     https://github.com/50bvd
 " -ForegroundColor Green
+#var
+$WindowsKey = "NPPR9-FWDCX-D2C8J-H872K-2YT43"
+$OfficeKey = "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH"
+$KMSserver = "YOUR_KMS_SRV" #replace with your kms srv
+$Answer = Read-Host "Do you want to install Windows key, Office key or both? (W/O/B)"
 #rearm office gvlk
 function Initialize-OfficeLicense {
     Push-Location
