@@ -6,6 +6,10 @@
 2. right click and execute with PowerShell
 3. wait a few seconds before activation
 
+If you dont have a KMS server, see this [link](https://gist.github.com/Zibri/69d55039e5354100d2f8a053cbe64c5a#online-kms-host-address), it lists several KMS servers
+
+Otherwise, you can use my KMS server that I leave at your disposal. -> kms.50bvd.com :white_check_mark: Actually UP
+
 _See [50bvd.com Windows/Office activation script](https://50bvd.com/posts/Activation-de-Windows-&-Office/#14-exectution-du-script)_
 
 # Note
@@ -16,7 +20,3 @@ Type on your terminal `slmgr /dlv`
 You will have the information about your license as on this example :arrow_heading_down:
 
 [![slmgrdlv](/icon/slmgrdlv.png)](https://learn.microsoft.com/en-us/windows-server/get-started/kms-client-activation-keys)
-
-If you dont have a KMS server, see this [link](https://gist.github.com/Zibri/69d55039e5354100d2f8a053cbe64c5a#online-kms-host-address), it lists several KMS servers
-
-Otherwise, you can use my KMS server that I leave at your disposal. -> kms.50bvd.com :white_check_mark: Actually UP
