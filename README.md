@@ -8,7 +8,7 @@
 
 If you dont have a KMS server, see this [link](https://gist.github.com/Zibri/69d55039e5354100d2f8a053cbe64c5a#online-kms-host-address), it lists several KMS servers
 
-Otherwise, you can use my KMS server that I leave at your disposal. -> kms.50bvd.com :white_check_mark: Actually UP
+Otherwise, you can use my KMS server that I leave at your disposal. -> 50bvd.com :white_check_mark: Actually UP
 
 _See [50bvd.com Windows/Office activation script](https://50bvd.com/posts/Activation-de-Windows-&-Office/#14-exectution-du-script)_
 
