@@ -2,6 +2,10 @@
 ## This script will activate your Windows and Office product using [KMS activation](https://learn.microsoft.com/en-us/windows-server/get-started/kms-client-activation-keys)
 
 # To execute the script
-1. Launch the terminal on Administrator
-2. Change the execution policy with `Set-ExecutionPolicy Bypass`
-3. Right click on the script, and execute with the terminal
+1. Download the script [here](https://github.com/50bvd/kmsact/releases/download/2.0/kms-act_v2.ps1)
+2. Launch the terminal on Administrator
+3. Change the execution policy with `Set-ExecutionPolicy Bypass`
+4. Right click on the script, and execute with the terminal
+
+*_Example_*
+![](https://i.ibb.co/JWcZCy7V/Enregistrement-2025-02-28-204607.gif)
