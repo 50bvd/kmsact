@@ -7,5 +7,6 @@
 3. Change the execution policy with `Set-ExecutionPolicy Bypass`
 4. Right click on the script, and execute with the terminal
 
-*_Example_*
+*Example:*
+
 ![](https://i.ibb.co/JWcZCy7V/Enregistrement-2025-02-28-204607.gif)
