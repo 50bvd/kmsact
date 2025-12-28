@@ -118,13 +118,13 @@ $Global:Languages.xx = $langData
 ## Testing
 
 **Manual checklist**:
-- [ ] Windows activation
-- [ ] Office activation
-- [ ] Edition upgrade
-- [ ] Office installation
-- [ ] Language switching (test JSON loading)
-- [ ] Theme switching
-- [ ] Settings persistence
+- [x] Windows activation
+- [x] Office activation
+- [x] Edition upgrade
+- [x] Office installation
+- [x] Language switching (test JSON loading)
+- [x] Theme switching
+- [x] Settings persistence
 
 ## Contributing
 
