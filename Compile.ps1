@@ -1,6 +1,6 @@
 ﻿# Compile.ps1 - Compile C# launcher with embedded resources + Code Signing
 
-$ScriptRoot = "D:\kmscact"
+$ScriptRoot = $PSScriptRoot
 $BuildDir = "$ScriptRoot\Build"
 $TempDir = "$BuildDir\Temp"
 $OutputEXE = "$BuildDir\KMS_Activator.exe"
@@ -22,10 +22,16 @@ New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
 Write-Host "[1/5] Checking icon..." -ForegroundColor Yellow
 
 if (-not (Test-Path $IconFile)) {
-    Write-Host "  ERROR: icon.ico not found at $IconFile" -ForegroundColor Red
-    Write-Host "  Please convert key.png to icon.ico first" -ForegroundColor Yellow
-    exit 1
-}
+       $IconFile = "$ScriptRoot\assets\key.ico"
+       if (-not (Test-Path $IconFile)) {
+           Write-Host "  WARNING: icon.ico not found, skipping icon" -ForegroundColor Yellow
+           $IconFile = $null
+       } else {
+           Write-Host "  Using fallback icon: assets\key.ico" -ForegroundColor Yellow
+       }
+   } else {
+       Write-Host "  Icon ready: icon.ico" -ForegroundColor Green
+   }
 
 Write-Host "  Icon ready: icon.ico" -ForegroundColor Green
 
@@ -302,4 +308,5 @@ if ($signCert -eq $SelfSignedCertPath -and (Test-Path $SelfSignedCertPath)) {
 
 Write-Host "`nReady for distribution!" -ForegroundColor Green
 Write-Host ""
+
 
