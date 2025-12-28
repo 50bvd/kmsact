@@ -1,0 +1,49 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install PS2EXE
+      shell: powershell
+      run: |
+        Install-Module -Name ps2exe -Force -Scope CurrentUser
+        
+    - name: Build executable
+      shell: powershell
+      run: |
+        .\Compile.ps1
+        
+    - name: Get version from tag
+      id: get_version
+      shell: powershell
+      run: |
+        if ($env:GITHUB_REF -match 'refs/tags/v(.+)') {
+          $version = $matches[1]
+        } else {
+          $version = "dev"
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          Build/KMS_Activator.exe
+          Build/RELEASE_INFO.txt
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
