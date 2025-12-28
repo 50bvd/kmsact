@@ -1,33 +1,53 @@
+###############################################################################
+# Global
+###############################################################################
 * text=auto
 
-# Forcer GitHub Linguist à compter le XAML
-*.xaml linguist-language=XAML
+###############################################################################
+# GitHub Linguist — forcer la prise en compte du XAML du dossier UI/
+# (important: patterns utilisent des /, comme .gitignore)
+###############################################################################
+UI/**/*.xaml linguist-language=XAML linguist-detectable=true linguist-generated=false linguist-vendored=false
 
-# PowerShell / Windows
-*.ps1  text eol=crlf
-*.psm1 text eol=crlf
-*.psd1 text eol=crlf
+# Fallback XAML dans le cas ou y en a ailleurs dans le turfu oui le vaisseau mere b2o
+*.xaml linguist-language=XAML linguist-detectable=true
 
-# .NET / WPF
-*.cs     text eol=crlf
-*.csproj text eol=crlf
-*.sln    text eol=crlf
-*.xaml   text eol=crlf
+###############################################################################
+# Line endings (cohérent Windows / WPF / PowerShell)
+###############################################################################
+# PowerShell
+*.ps1     text eol=crlf
+*.psm1    text eol=crlf
+*.psd1    text eol=crlf
+
+# C# / .NET
+*.cs      text eol=crlf
+*.csproj  text eol=crlf
+*.sln     text eol=crlf
+*.props   text eol=crlf
+*.targets text eol=crlf
+*.config  text eol=crlf
+
+# XAML
+*.xaml    text eol=crlf
 
 # Docs / configs (souvent mieux en LF)
-*.md   text eol=lf
-*.yml  text eol=lf
-*.yaml text eol=lf
-*.json text eol=lf
+*.md      text eol=lf
+*.txt     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.json    text eol=lf
 
-# Binaires
-*.ico  binary
-*.png  binary
-*.jpg  binary
-*.jpeg binary
-*.gif  binary
-*.webp binary
-*.zip  binary
-*.7z   binary
-*.exe  binary
-*.dll  binary
+###############################################################################
+# Binary files
+###############################################################################
+*.ico     binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.zip     binary
+*.7z      binary
+*.exe     binary
+*.dll     binary
