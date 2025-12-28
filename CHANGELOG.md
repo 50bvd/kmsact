@@ -122,17 +122,4 @@
 
 ---
 
-## Coming Soon (v3.6+)
-
-- [ ] Project support (separate configs per project)
-- [ ] Office 365 support
-- [ ] Windows Server editions
-- [ ] Custom KMS server management
-- [ ] Activation history
-- [ ] Export logs
-- [ ] More languages (Chinese, Japanese, Russian, Portuguese)
-- [ ] Portable mode (no registry)
-
----
-
 **Full Changelog**: https://github.com/50bvd/kmsact/compare/2.0...v3.5.0
