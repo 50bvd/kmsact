@@ -1,6 +1,11 @@
 ﻿# KMS Activator 
+[![Build Status](https://github.com/50bvd/kmsact/workflows/Build%20Release/badge.svg)](https://github.com/50bvd/kmsact/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/50bvd/kmsact/releases)
 
 A modern, feature-rich Windows and Office activation tool with a beautiful WPF interface.
+
+![img](https://50bvd.com/assets/img/kmsact.png)
 
 ## Features
 
@@ -117,6 +122,7 @@ This tool is for educational purposes only. Use at your own risk. The authors ar
 ---
 
 If you find this project useful, please give it a star!
+
 
 
 
