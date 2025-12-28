@@ -109,11 +109,6 @@ This project is licensed under the MIT License.
 
 This tool is for educational purposes only. Use at your own risk. The authors are not responsible for any misuse or damage caused by this software.
 
-## Credits
-
-- Original concept and development by [50bvd](https://github.com/50bvd)
-- KMS activation technology
-
 ## Support
 
 - Report bugs: [Issues](https://github.com/50bvd/kmscact/issues)
@@ -122,4 +117,5 @@ This tool is for educational purposes only. Use at your own risk. The authors ar
 ---
 
 If you find this project useful, please give it a star!
+
 
