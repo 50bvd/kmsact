@@ -19,10 +19,71 @@ jobs:
       run: |
         Install-Module -Name ps2exe -Force -Scope CurrentUser
         
-    - name: Build executable
+    - name: Create self-signed certificate for code signing
       shell: powershell
       run: |
-        .\Compile.ps1
+        Write-Host "Creating self-signed certificate for 50bvd..." -ForegroundColor Cyan
+        
+        # Create certificate with proper attributes
+        $cert = New-SelfSignedCertificate `
+          -Type CodeSigningCert `
+          -Subject "CN=50bvd, O=50bvd, C=FR" `
+          -CertStoreLocation Cert:\CurrentUser\My `
+          -NotAfter (Get-Date).AddYears(5) `
+          -KeyExportPolicy Exportable
+        
+        Write-Host "Certificate created: $($cert.Thumbprint)" -ForegroundColor Green
+        Write-Host "Subject: $($cert.Subject)" -ForegroundColor White
+        
+        # Export to PFX
+        $certPassword = ConvertTo-SecureString "50bvd2025" -AsPlainText -Force
+        $pfxPath = "$env:TEMP\50bvd_CodeSigning.pfx"
+        Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $certPassword | Out-Null
+        
+        Write-Host "Certificate exported to: $pfxPath" -ForegroundColor Green
+        
+        # Add to Trusted Root (so Windows trusts it)
+        try {
+          $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
+          $store.Open("ReadWrite")
+          $store.Add($cert)
+          $store.Close()
+          Write-Host "Certificate added to Trusted Root" -ForegroundColor Green
+        } catch {
+          Write-Host "Warning: Could not add to Trusted Root: $_" -ForegroundColor Yellow
+        }
+        
+        # Save certificate info for later steps
+        echo "CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
+        echo "CERT_PFX_PATH=$pfxPath" >> $env:GITHUB_ENV
+        
+    - name: Build executable with signing
+      shell: powershell
+      run: |
+        Write-Host "Building and signing KMS_Activator.exe..." -ForegroundColor Cyan
+        
+        # Run compilation (skip interactive signing prompt)
+        $env:AUTO_SIGN = "true"
+        $env:CERT_PATH = $env:CERT_PFX_PATH
+        $env:CERT_PASSWORD = "50bvd2025"
+        
+        # Compile without interactive prompts
+        .\Compile-CI.ps1
+        
+    - name: Verify signature
+      shell: powershell
+      run: |
+        $signature = Get-AuthenticodeSignature "Build\KMS_Activator.exe"
+        
+        Write-Host "`nSignature Information:" -ForegroundColor Cyan
+        Write-Host "  Status: $($signature.Status)" -ForegroundColor $(if ($signature.Status -eq 'Valid') { 'Green' } else { 'Yellow' })
+        Write-Host "  Signer: $($signature.SignerCertificate.Subject)" -ForegroundColor White
+        Write-Host "  Issuer: $($signature.SignerCertificate.Issuer)" -ForegroundColor White
+        Write-Host "  Valid Until: $($signature.SignerCertificate.NotAfter)" -ForegroundColor White
+        
+        if ($signature.Status -ne 'Valid') {
+          Write-Host "Warning: Signature status is not Valid" -ForegroundColor Yellow
+        }
         
     - name: Get version from tag
       id: get_version
@@ -36,7 +97,6 @@ jobs:
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
         
     - name: Create Release
-      id: create_release
       uses: softprops/action-gh-release@v1
       with:
         files: |
@@ -45,5 +105,23 @@ jobs:
         draft: false
         prerelease: false
         generate_release_notes: true
+        body: |
+          ## KMS Activator v${{ steps.get_version.outputs.VERSION }}
+          
+          ### Download
+          - **KMS_Activator.exe** - Signed executable (Code signed by 50bvd)
+          
+          ### Verification
+          - **SHA256**: See RELEASE_INFO.txt
+          - **Signed by**: 50bvd
+          - **Certificate**: Self-signed (valid for 5 years)
+          
+          ### Installation
+          1. Download KMS_Activator.exe
+          2. Run as Administrator
+          3. If Windows SmartScreen appears, click "More info" → "Run anyway"
+          
+          ### What's New
+          See [CHANGELOG.md](https://github.com/50bvd/kmsact/blob/main/CHANGELOG.md)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
