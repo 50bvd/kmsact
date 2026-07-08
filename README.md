@@ -5,7 +5,7 @@
 
 A modern, feature-rich Windows and Office activation tool with a beautiful WPF interface.
 
-![img](https://50bvd.com/assets/img/kmsact.png)
+![img](https://50bvd.com/assets/img/Capture%20d'%C3%A9cran%202025-12-28%20120017.png)
 
 ## Features
 
