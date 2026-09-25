@@ -1,0 +1,61 @@
+name: Validate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: PowerShell parse check
+      shell: powershell
+      run: |
+        $fail = $false
+        Write-Host "== PowerShell parse ==" -ForegroundColor Cyan
+        $psFiles = Get-ChildItem -Recurse -Filter *.ps1 -Path . | Where-Object { $_.FullName -notmatch '\\Build\\' }
+        foreach ($f in $psFiles) {
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errors) | Out-Null
+          if ($errors -and $errors.Count -gt 0) {
+            $fail = $true
+            Write-Host "PARSE ERRORS in $($f.FullName):" -ForegroundColor Red
+            $errors | ForEach-Object { Write-Host "  [line $($_.Extent.StartLineNumber)] $($_.Message)" -ForegroundColor Red }
+          } else {
+            Write-Host "ok: $($f.Name)" -ForegroundColor Green
+          }
+        }
+        if ($fail) { throw "PowerShell parse errors found" }
+
+    - name: XAML load check
+      shell: powershell
+      run: |
+        Write-Host "== XAML load ==" -ForegroundColor Cyan
+        $xamlPath = (Resolve-Path "UI\MainWindow.xaml").Path
+        $sb = {
+          param($path)
+          Add-Type -AssemblyName PresentationFramework
+          Add-Type -AssemblyName PresentationCore
+          Add-Type -AssemblyName WindowsBase
+          $content = Get-Content $path -Raw -Encoding UTF8
+          $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]$content)
+          [Windows.Markup.XamlReader]::Load($reader) | Out-Null
+          return "XAML_OK"
+        }
+        $rs = [runspacefactory]::CreateRunspace()
+        $rs.ApartmentState = 'STA'
+        $rs.ThreadOptions = 'ReuseThread'
+        $rs.Open()
+        $ps = [powershell]::Create()
+        $ps.Runspace = $rs
+        [void]$ps.AddScript($sb).AddArgument($xamlPath)
+        $res = $ps.Invoke()
+        if ($ps.HadErrors) {
+          Write-Host "XAML LOAD FAILED:" -ForegroundColor Red
+          $ps.Streams.Error | ForEach-Object { Write-Host "  $($_.Exception.Message)" -ForegroundColor Red }
+          throw "XAML failed to load"
+        } else {
+          Write-Host "XAML loaded OK: $res" -ForegroundColor Green
+        }
