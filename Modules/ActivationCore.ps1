@@ -22,49 +22,65 @@ function Invoke-CommandWithRealTimeOutput {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
     
+    # NOTE: these handlers fire on background threadpool threads.
+    # - Dispatcher.BeginInvoke (async) is used instead of Invoke (sync) so the
+    #   reader thread never blocks waiting on the UI thread.
+    # - [Application]::DoEvents() is deliberately NOT called here: pumping the
+    #   WinForms message loop from a non-UI thread is the main cause of the
+    #   freeze/jank seen during long operations (e.g. the Office setup).
     $outputHandler = {
-        if ($EventArgs.Data) {
+        if ($null -ne $EventArgs.Data) {
             $line = $EventArgs.Data
             try {
-                $Global:LogBox.Dispatcher.Invoke([action]{
-                    $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [INFO] $line`n")
+                $Global:LogBox.Dispatcher.BeginInvoke([action]{
+                    $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [OUT] $line`n")
                     $Global:LogBox.ScrollToEnd()
-                }, "Normal")
-                [System.Windows.Forms.Application]::DoEvents()
+                }, "Background") | Out-Null
             } catch {}
         }
     }
-    
+
     $errorHandler = {
-        if ($EventArgs.Data) {
+        if ($null -ne $EventArgs.Data) {
             $line = $EventArgs.Data
             try {
-                $Global:LogBox.Dispatcher.Invoke([action]{
-                    $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [WARN] $line`n")
+                $Global:LogBox.Dispatcher.BeginInvoke([action]{
+                    $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [ERR] $line`n")
                     $Global:LogBox.ScrollToEnd()
-                }, "Normal")
-                [System.Windows.Forms.Application]::DoEvents()
+                }, "Background") | Out-Null
             } catch {}
         }
     }
-    
+
     Register-ObjectEvent -InputObject $process -EventName OutputDataReceived -Action $outputHandler | Out-Null
     Register-ObjectEvent -InputObject $process -EventName ErrorDataReceived -Action $errorHandler | Out-Null
-    
+
+    # Verbose: show exactly what is being executed and where.
+    Write-Log "[CMD] $FilePath $cmdLine" "Gray"
+    if ($WorkingDirectory) { Write-Log "[CWD] $WorkingDirectory" "Gray" }
+
     $process.Start() | Out-Null
     $process.BeginOutputReadLine()
     $process.BeginErrorReadLine()
-    
+
+    # Pump the UI on THIS (the UI) thread while the child runs. A slightly
+    # larger interval lowers CPU churn without hurting perceived responsiveness.
     while (-not $process.HasExited) {
         [System.Windows.Forms.Application]::DoEvents()
-        Start-Sleep -Milliseconds 100
+        Start-Sleep -Milliseconds 150
     }
-    
+
     $process.WaitForExit()
     $exitCode = $process.ExitCode
-    
+
+    # Let any in-flight async log lines drain to the UI before returning.
+    [System.Windows.Forms.Application]::DoEvents()
+
     Get-EventSubscriber | Where-Object { $_.SourceObject -eq $process } | Unregister-Event
-    
+
+    $exitColor = if ($exitCode -eq 0) { "Green" } else { "Yellow" }
+    Write-Log "[EXIT] code $exitCode" $exitColor
+
     return $exitCode
 }
 
@@ -139,87 +155,107 @@ function Enable-Office {
     Write-LogHeader "Office Activation"
     Update-Status "Activating Office..."
     
+    Write-LogStep "KMS host: $($Global:Config.KMSServer)" "INFO"
+    Write-LogStep "Office product key: $($Global:Config.Office.Key)" "INFO"
+
     try {
         Write-LogStep "Checking Office installation..." "INFO"
-        $officeVersion = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration" -ErrorAction SilentlyContinue).VersionToReport
-        
+
+        # Registry version is best-effort ONLY. Right after a Click-to-Run
+        # install it is frequently missing (C2R finalizes asynchronously) or
+        # invisible from a 32-bit host (reads land in WOW6432Node). Gating
+        # activation on it is exactly why "Activate Office" did nothing right
+        # after an install, so detection below is driven by ospp.vbs on disk.
+        $officeVersion = $null
+        foreach ($regPath in @(
+                "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration",
+                "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Office\ClickToRun\Configuration")) {
+            $v = (Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue).VersionToReport
+            if ($v) { $officeVersion = $v; break }
+        }
         if ($officeVersion) {
-            Write-LogStep "Office version detected: $officeVersion" "SUCCESS"
-            
-            $officePath = $null
-            Write-LogStep "Searching for Office installation..." "INFO"
-            
+            Write-LogStep "Office version (registry): $officeVersion" "SUCCESS"
+        } else {
+            Write-LogStep "Office version not in registry yet - continuing via file detection" "INFO"
+        }
+
+        # Primary detection: locate ospp.vbs. Retry briefly so a freshly
+        # finished install has time to drop its files into place.
+        $officePath = $null
+        $osppPath = $null
+        Write-LogStep "Searching for Office activation script (ospp.vbs)..." "INFO"
+        $maxAttempts = 6
+        for ($attempt = 1; $attempt -le $maxAttempts -and -not $osppPath; $attempt++) {
             foreach ($path in $Global:Config.Office.Paths) {
-                if (Test-Path $path) {
+                $candidate = Join-Path $path "ospp.vbs"
+                Write-LogStep "  probe: $candidate" "INFO"
+                if (Test-Path $candidate) {
                     $officePath = $path
-                    Write-LogStep "Office found at: $path" "SUCCESS"
+                    $osppPath = $candidate
+                    Write-LogStep "Found ospp.vbs at: $candidate" "SUCCESS"
                     break
                 }
             }
-            
-            if ($officePath) {
-                $osppPath = Join-Path $officePath "ospp.vbs"
-                if (Test-Path $osppPath) {
-                    Write-LogStep "ospp.vbs found" "SUCCESS"
-                } else {
-                    throw "ospp.vbs not found in $officePath"
-                }
-                
-                Write-LogStep "Installing Office product key..." "INFO"
-                
-                $exitCode = Invoke-CommandWithRealTimeOutput -FilePath "cscript.exe" -ArgumentList @("//nologo", "`"$osppPath`"", "/inpkey:$($Global:Config.Office.Key)") -WorkingDirectory $officePath
-                
-                if ($exitCode -eq 0) {
-                    Write-LogStep "Product key installed successfully" "SUCCESS"
-                } else {
-                    Write-LogStep "Product key installation returned code: $exitCode" "WARNING"
-                }
-                
-                Start-Sleep -Seconds 1
+            if (-not $osppPath -and $attempt -lt $maxAttempts) {
+                Write-LogStep "ospp.vbs not found yet - waiting for install to settle ($attempt/$($maxAttempts - 1))..." "WARNING"
+                Start-Sleep -Seconds 5
                 [System.Windows.Forms.Application]::DoEvents()
-                
-                Write-LogStep "Configuring KMS host..." "INFO"
-                
-                $exitCode = Invoke-CommandWithRealTimeOutput -FilePath "cscript.exe" -ArgumentList @("//nologo", "`"$osppPath`"", "/sethst:$($Global:Config.KMSServer)") -WorkingDirectory $officePath
-                
-                if ($exitCode -eq 0) {
-                    Write-LogStep "KMS host configured successfully" "SUCCESS"
-                } else {
-                    Write-LogStep "KMS host configuration returned code: $exitCode" "WARNING"
-                }
-                
-                Start-Sleep -Seconds 1
-                [System.Windows.Forms.Application]::DoEvents()
-                
-                Write-LogStep "Activating Office..." "INFO"
-                
-                $exitCode = Invoke-CommandWithRealTimeOutput -FilePath "cscript.exe" -ArgumentList @("//nologo", "`"$osppPath`"", "/act") -WorkingDirectory $officePath
-                
-                if ($exitCode -eq 0) {
-                    Write-LogStep "Activation command completed" "SUCCESS"
-                } else {
-                    Write-LogStep "Activation returned code: $exitCode" "WARNING"
-                }
-                
-                Write-LogHeader "Activation Complete"
-                Write-LogStep "Office has been activated!" "SUCCESS"
-                
-                Show-StyledMessageBox -Message (Get-String "officeActivated") -Title (Get-String "success") -Buttons "OK" -Icon "Information"
-            }
-            else {
-                Write-LogStep "Office installation path not found" "ERROR"
-                Write-LogStep "Searched paths:" "ERROR"
-                foreach ($path in $Global:Config.Office.Paths) {
-                    Write-LogStep "  - $path" "ERROR"
-                }
-                
-                Show-StyledMessageBox -Message (Get-String "officeNotInstalled") -Title (Get-String "error") -Buttons "OK" -Icon "Error"
             }
         }
+
+        if ($osppPath) {
+            Write-LogStep "Installing Office product key..." "INFO"
+
+            $exitCode = Invoke-CommandWithRealTimeOutput -FilePath "cscript.exe" -ArgumentList @("//nologo", "`"$osppPath`"", "/inpkey:$($Global:Config.Office.Key)") -WorkingDirectory $officePath
+
+            if ($exitCode -eq 0) {
+                Write-LogStep "Product key installed successfully" "SUCCESS"
+            } else {
+                Write-LogStep "Product key installation returned code: $exitCode" "WARNING"
+            }
+
+            Start-Sleep -Seconds 1
+            [System.Windows.Forms.Application]::DoEvents()
+
+            Write-LogStep "Configuring KMS host..." "INFO"
+
+            $exitCode = Invoke-CommandWithRealTimeOutput -FilePath "cscript.exe" -ArgumentList @("//nologo", "`"$osppPath`"", "/sethst:$($Global:Config.KMSServer)") -WorkingDirectory $officePath
+
+            if ($exitCode -eq 0) {
+                Write-LogStep "KMS host configured successfully" "SUCCESS"
+            } else {
+                Write-LogStep "KMS host configuration returned code: $exitCode" "WARNING"
+            }
+
+            Start-Sleep -Seconds 1
+            [System.Windows.Forms.Application]::DoEvents()
+
+            Write-LogStep "Activating Office..." "INFO"
+
+            $exitCode = Invoke-CommandWithRealTimeOutput -FilePath "cscript.exe" -ArgumentList @("//nologo", "`"$osppPath`"", "/act") -WorkingDirectory $officePath
+
+            if ($exitCode -eq 0) {
+                Write-LogStep "Activation command completed" "SUCCESS"
+            } else {
+                Write-LogStep "Activation returned code: $exitCode" "WARNING"
+            }
+
+            # Verbose: report the resulting license status so the log shows the real outcome.
+            Write-LogStep "Querying Office license status..." "INFO"
+            Invoke-CommandWithRealTimeOutput -FilePath "cscript.exe" -ArgumentList @("//nologo", "`"$osppPath`"", "/dstatus") -WorkingDirectory $officePath | Out-Null
+
+            Write-LogHeader "Activation Complete"
+            Write-LogStep "Office activation sequence finished." "SUCCESS"
+
+            Show-StyledMessageBox -Message (Get-String "officeActivated") -Title (Get-String "success") -Buttons "OK" -Icon "Information"
+        }
         else {
-            Write-LogStep "Office not detected on system" "ERROR"
-            Write-LogStep "Registry key not found: HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration" "ERROR"
-            
+            Write-LogStep "Could not locate ospp.vbs in any known Office path" "ERROR"
+            Write-LogStep "Searched paths:" "ERROR"
+            foreach ($path in $Global:Config.Office.Paths) {
+                Write-LogStep "  - $path" "ERROR"
+            }
+
             Show-StyledMessageBox -Message (Get-String "officeNotInstalled") -Title (Get-String "error") -Buttons "OK" -Icon "Error"
         }
     }

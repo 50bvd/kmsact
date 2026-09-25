@@ -83,7 +83,12 @@ function Write-Log {
     }
     
     if ($Global:LogBox) {
-        $Global:LogBox.Dispatcher.Invoke([action]{
+        # BeginInvoke (async) instead of Invoke (sync): a synchronous marshal on
+        # every single log line blocks the caller and, when logs are dense (e.g.
+        # streaming ospp.vbs / setup output), starves the UI message loop and
+        # makes the window feel frozen. Queuing keeps the UI thread free; the
+        # DoEvents pump in the run loops flushes the queue for live output.
+        $Global:LogBox.Dispatcher.BeginInvoke([action]{
             try {
                 # Force UTF-8 encoding for special characters
                 $utf8Message = if ($NoNewLine) {
@@ -91,7 +96,7 @@ function Write-Log {
                 } else {
                     "$formattedMessage`n"
                 }
-                
+
                 $Global:LogBox.AppendText($utf8Message)
                 $Global:LogBox.ScrollToEnd()
             }
@@ -104,7 +109,7 @@ function Write-Log {
                 }
                 $Global:LogBox.ScrollToEnd()
             }
-        }, "Normal")
+        }, "Background") | Out-Null
     }
     
     # Also write to console
