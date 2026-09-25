@@ -456,11 +456,8 @@ function Show-GUI {
         $window.Add_Loaded({
             Start-Sleep -Milliseconds 500
             
-            if ($headerBar) {
-                $headerColor = if ($Global:CurrentTheme -eq "Dark") { "#1E1E1E" } else { "#0078D4" }
-                $headerBar.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($headerColor)
-            }
-            
+            # Header keeps its AppHeaderBrush gradient in both themes; Apply-Theme
+            # swaps the DynamicResource brushes for everything else.
             Apply-Theme -Theme $Global:CurrentTheme
         })
         

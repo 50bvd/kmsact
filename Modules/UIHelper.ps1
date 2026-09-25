@@ -464,176 +464,67 @@ function Get-WindowsTheme {
     }
 }
 
-# Apply theme to window
+# Modern light/dark palettes for the main window. Because every themed element
+# in MainWindow.xaml references its color via {DynamicResource ...}, swapping
+# these resource values re-themes the whole window instantly - no visual-tree
+# walking and no per-element hardcoded colors.
+function Set-AppThemeResources {
+    param(
+        [System.Windows.Window]$Window,
+        [string]$Theme = $Global:CurrentTheme
+    )
+
+    if (-not $Window) { return }
+
+    if ($Theme -eq "Dark") {
+        $palette = @{
+            AppWindowBrush        = "#1B1B1F"
+            AppCardBrush          = "#26262B"
+            AppCardBorderBrush    = "#37373D"
+            AppButtonBrush        = "#2F2F35"
+            AppButtonBorderBrush  = "#3C3C43"
+            AppTextPrimaryBrush   = "#F3F3F3"
+            AppTextSecondaryBrush = "#A9A9B2"
+            AppTextButtonBrush    = "#ECECEC"
+            AppAccentBrush        = "#4CA9FF"
+            AppSeparatorBrush     = "#37373D"
+        }
+    }
+    else {
+        $palette = @{
+            AppWindowBrush        = "#F5F6F8"
+            AppCardBrush          = "#FFFFFF"
+            AppCardBorderBrush    = "#ECEFF3"
+            AppButtonBrush        = "#FFFFFF"
+            AppButtonBorderBrush  = "#E3E6EA"
+            AppTextPrimaryBrush   = "#1F2328"
+            AppTextSecondaryBrush = "#5B6068"
+            AppTextButtonBrush    = "#2B2F36"
+            AppAccentBrush        = "#0078D4"
+            AppSeparatorBrush     = "#E4E7EC"
+        }
+    }
+
+    foreach ($key in $palette.Keys) {
+        try {
+            $color = [System.Windows.Media.ColorConverter]::ConvertFromString($palette[$key])
+            $Window.Resources[$key] = [System.Windows.Media.SolidColorBrush]::new($color)
+        }
+        catch {
+            Write-Host "Theme resource '$key' failed: $_" -ForegroundColor Yellow
+        }
+    }
+}
+
+# Apply theme to the main window by swapping DynamicResource brushes.
 function Apply-Theme {
-    param([string]$Theme)
-    
+    param([string]$Theme = $Global:CurrentTheme)
+
     if (-not $Global:MainWindow) { return }
-    
+
     try {
         $Global:MainWindow.Dispatcher.Invoke([action]{
-            if ($Theme -eq "Dark") {
-                # Dark theme - highly readable
-                $Global:MainWindow.Background = "#1E1E1E"
-                
-                # Get all elements
-                $systemCard = $Global:MainWindow.FindName("SystemInfoCard")
-                $actionCard = $Global:MainWindow.FindName("ActionCard")
-                $consoleCard = $Global:MainWindow.FindName("ConsoleCard")
-                $statusBadge = $Global:MainWindow.FindName("StatusBadge")
-                
-                # Update all TextBlocks to white/gray
-                $allTextBlocks = [System.Windows.LogicalTreeHelper]::FindLogicalNode($Global:MainWindow, [System.Windows.Controls.TextBlock])
-                
-                # Find all visual children recursively
-                function Get-VisualChildren {
-                    param($parent)
-                    $count = [System.Windows.Media.VisualTreeHelper]::GetChildrenCount($parent)
-                    for ($i = 0; $i -lt $count; $i++) {
-                        $child = [System.Windows.Media.VisualTreeHelper]::GetChild($parent, $i)
-                        $child
-                        Get-VisualChildren $child
-                    }
-                }
-                
-                # Update all TextBlocks
-                Get-VisualChildren $Global:MainWindow | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                    # Skip log textbox
-                    if ($_.Name -ne "LogTextBox") {
-                        # Title = white, others = gray
-                        if ($_.FontSize -ge 14 -or $_.FontWeight -eq "Bold") {
-                            $_.Foreground = "#FFFFFF"
-                        } else {
-                            $_.Foreground = "#B0B0B0"
-                        }
-                    }
-                }
-                
-                # Update cards
-                if ($systemCard) { 
-                    $systemCard.Background = "#2D2D2D"
-                    $systemCard.BorderBrush = "#3F3F3F"
-                }
-                
-                if ($actionCard) { 
-                    $actionCard.Background = "#2D2D2D"
-                    $actionCard.BorderBrush = "#3F3F3F"
-                }
-                
-                if ($consoleCard) { 
-                    $consoleCard.Background = "#2D2D2D"
-                    $consoleCard.BorderBrush = "#3F3F3F"
-                }
-                
-                # Update all buttons in action card
-                Get-VisualChildren $actionCard | Where-Object { $_ -is [System.Windows.Controls.Button] } | ForEach-Object {
-                    $_.Background = "#3F3F3F"
-                    $_.BorderBrush = "#4F4F4F"
-                    
-                    # Update text inside button
-                    Get-VisualChildren $_ | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                        $_.Foreground = "#E0E0E0"
-                    }
-                }
-                
-                # Update separators
-                Get-VisualChildren $actionCard | Where-Object { $_ -is [System.Windows.Controls.Separator] } | ForEach-Object {
-                    $_.Background = "#3F3F3F"
-                }
-                
-                # Update header - keep blue background
-                $header = $Global:MainWindow.Content.Children[0]
-                if ($header) {
-                    $header.Background = "#0078D4"
-                    
-                    # Ensure header text is white
-                    Get-VisualChildren $header | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                        $_.Foreground = "#FFFFFF"
-                    }
-                }
-                
-                # Update StatusBadge (Ready badge)
-                $statusBadge = $Global:MainWindow.FindName("StatusBadge")
-                if ($statusBadge) {
-                    # StatusBadge text should be white
-                    Get-VisualChildren $statusBadge | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                        $_.Foreground = "#FFFFFF"
-                    }
-                }
-            }
-            else {
-                # Light theme (restore defaults)
-                $Global:MainWindow.Background = "White"
-                
-                $systemCard = $Global:MainWindow.FindName("SystemInfoCard")
-                $actionCard = $Global:MainWindow.FindName("ActionCard")
-                $consoleCard = $Global:MainWindow.FindName("ConsoleCard")
-                
-                # Restore all TextBlocks
-                function Get-VisualChildren {
-                    param($parent)
-                    $count = [System.Windows.Media.VisualTreeHelper]::GetChildrenCount($parent)
-                    for ($i = 0; $i -lt $count; $i++) {
-                        $child = [System.Windows.Media.VisualTreeHelper]::GetChild($parent, $i)
-                        $child
-                        Get-VisualChildren $child
-                    }
-                }
-                
-                Get-VisualChildren $Global:MainWindow | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                    if ($_.Name -ne "LogTextBox") {
-                        $_.Foreground = "#333333"
-                    }
-                }
-                
-                if ($systemCard) { 
-                    $systemCard.Background = "White"
-                    $systemCard.BorderBrush = "#E0E0E0"
-                }
-                if ($actionCard) { 
-                    $actionCard.Background = "White" 
-                    $actionCard.BorderBrush = "#E0E0E0"
-                    
-                    # Restore buttons
-                    Get-VisualChildren $actionCard | Where-Object { $_ -is [System.Windows.Controls.Button] } | ForEach-Object {
-                        $_.Background = "White"
-                        $_.BorderBrush = "#DDDDDD"
-                        
-                        Get-VisualChildren $_ | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                            $_.Foreground = "#333333"
-                        }
-                    }
-                    
-                    # Restore separators
-                    Get-VisualChildren $actionCard | Where-Object { $_ -is [System.Windows.Controls.Separator] } | ForEach-Object {
-                        $_.Background = "#E0E0E0"
-                    }
-                }
-                if ($consoleCard) { 
-                    $consoleCard.Background = "White"
-                    $consoleCard.BorderBrush = "#E0E0E0"
-                }
-                
-                # Restore header
-                $header = $Global:MainWindow.Content.Children[0]
-                if ($header) {
-                    $header.Background = "#0078D4"
-                    
-                    # Ensure header text is white in light mode too
-                    Get-VisualChildren $header | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                        $_.Foreground = "#FFFFFF"
-                    }
-                }
-                
-                # Update StatusBadge in light mode (Ready badge)
-                $statusBadge = $Global:MainWindow.FindName("StatusBadge")
-                if ($statusBadge) {
-                    # StatusBadge text should be white in light mode too
-                    Get-VisualChildren $statusBadge | Where-Object { $_ -is [System.Windows.Controls.TextBlock] } | ForEach-Object {
-                        $_.Foreground = "#FFFFFF"
-                    }
-                }
-            }
+            Set-AppThemeResources -Window $Global:MainWindow -Theme $Theme
         }, "Normal")
     }
     catch {
