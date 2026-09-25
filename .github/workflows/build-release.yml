@@ -9,7 +9,9 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    
+    permissions:
+      contents: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -103,7 +105,7 @@ jobs:
           Build/KMS_Activator.exe
           Build/RELEASE_INFO.txt
         draft: false
-        prerelease: false
+        prerelease: ${{ contains(github.ref_name, '-') }}
         generate_release_notes: true
         body: |
           ## KMS Activator v${{ steps.get_version.outputs.VERSION }}

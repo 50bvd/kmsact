@@ -134,7 +134,7 @@
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <TextBlock Text="MS KMS Activator" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                    <TextBlock Text="v3.5" FontSize="12" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" Opacity="0.8"/>
+                    <TextBlock Text="v3.6.0" FontSize="12" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" Opacity="0.8"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
