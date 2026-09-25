@@ -20,7 +20,45 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
+    - name: Validate scripts and XAML
+      shell: powershell
+      run: |
+        $fail = $false
+        Write-Host "== PowerShell parse ==" -ForegroundColor Cyan
+        Get-ChildItem -Recurse -Filter *.ps1 -Path . | Where-Object { $_.FullName -notmatch '\\Build\\' } | ForEach-Object {
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors) | Out-Null
+          if ($errors -and $errors.Count -gt 0) {
+            $script:fail = $true
+            Write-Host "PARSE ERRORS in $($_.FullName):" -ForegroundColor Red
+            $errors | ForEach-Object { Write-Host "  [line $($_.Extent.StartLineNumber)] $($_.Message)" -ForegroundColor Red }
+          } else {
+            Write-Host "ok: $($_.Name)" -ForegroundColor Green
+          }
+        }
+        Write-Host "== XAML load ==" -ForegroundColor Cyan
+        $xamlPath = (Resolve-Path "UI\MainWindow.xaml").Path
+        $sb = {
+          param($path)
+          Add-Type -AssemblyName PresentationFramework
+          $content = Get-Content $path -Raw -Encoding UTF8
+          $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]$content)
+          [Windows.Markup.XamlReader]::Load($reader) | Out-Null
+        }
+        $rs = [runspacefactory]::CreateRunspace(); $rs.ApartmentState = 'STA'; $rs.ThreadOptions = 'ReuseThread'; $rs.Open()
+        $psx = [powershell]::Create(); $psx.Runspace = $rs
+        [void]$psx.AddScript($sb).AddArgument($xamlPath)
+        $psx.Invoke() | Out-Null
+        if ($psx.HadErrors) {
+          $fail = $true
+          Write-Host "XAML LOAD FAILED:" -ForegroundColor Red
+          $psx.Streams.Error | ForEach-Object { Write-Host "  $($_.Exception.Message)" -ForegroundColor Red }
+        } else {
+          Write-Host "XAML loaded OK" -ForegroundColor Green
+        }
+        if ($fail) { throw "Validation failed" }
+
     - name: Install PS2EXE
       shell: powershell
       run: |
