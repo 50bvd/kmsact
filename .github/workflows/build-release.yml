@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version without leading v (e.g. 3.6.0-rc1). A "-" marks it as a pre-release.'
+        required: true
+        default: '3.6.0-rc1'
 
 jobs:
   build:
@@ -87,25 +92,46 @@ jobs:
           Write-Host "Warning: Signature status is not Valid" -ForegroundColor Yellow
         }
         
-    - name: Get version from tag
+    - name: Resolve version and tag
       id: get_version
       shell: powershell
+      env:
+        INPUT_VERSION: ${{ github.event.inputs.version }}
       run: |
         if ($env:GITHUB_REF -match 'refs/tags/v(.+)') {
           $version = $matches[1]
+        } elseif ($env:INPUT_VERSION) {
+          $version = $env:INPUT_VERSION
         } else {
           $version = "dev"
         }
+        $tag = "v$version"
+        $pre = if ($tag -match '-') { 'true' } else { 'false' }
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-        
+        echo "TAG=$tag" >> $env:GITHUB_OUTPUT
+        echo "PRERELEASE=$pre" >> $env:GITHUB_OUTPUT
+        Write-Host "Resolved version=$version tag=$tag prerelease=$pre"
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: KMS_Activator-${{ steps.get_version.outputs.VERSION }}
+        path: |
+          Build/KMS_Activator.exe
+          Build/RELEASE_INFO.txt
+        if-no-files-found: error
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: ${{ steps.get_version.outputs.TAG }}
+        target_commitish: ${{ github.sha }}
+        name: KMS Activator ${{ steps.get_version.outputs.TAG }}
         files: |
           Build/KMS_Activator.exe
           Build/RELEASE_INFO.txt
         draft: false
-        prerelease: ${{ contains(github.ref_name, '-') }}
+        prerelease: ${{ steps.get_version.outputs.PRERELEASE }}
         generate_release_notes: true
         body: |
           ## KMS Activator v${{ steps.get_version.outputs.VERSION }}
