@@ -83,38 +83,19 @@ function Write-Log {
     }
     
     if ($Global:LogBox) {
-        # BeginInvoke (async) instead of Invoke (sync): a synchronous marshal on
-        # every single log line blocks the caller and, when logs are dense (e.g.
-        # streaming ospp.vbs / setup output), starves the UI message loop and
-        # makes the window feel frozen. Queuing keeps the UI thread free; the
-        # DoEvents pump in the run loops flushes the queue for live output.
-        # Use the (DispatcherPriority, Delegate) overload explicitly. BeginInvoke
-        # has no (Action, DispatcherPriority) overload, so passing the priority as
-        # a trailing string would bind to (Delegate, params object[]) and pass the
-        # string as an argument to the parameterless action -> it throws on the
-        # dispatcher at runtime. Priority-first is unambiguous.
-        $Global:LogBox.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
-            try {
-                # Force UTF-8 encoding for special characters
-                $utf8Message = if ($NoNewLine) {
-                    $formattedMessage
-                } else {
-                    "$formattedMessage`n"
-                }
-
+        # Marshal to the UI thread SYNCHRONOUSLY. Write-Log runs on the UI thread,
+        # so Invoke executes the append inline and the line shows immediately with
+        # no blocking. Do NOT switch this to an async BeginInvoke closure: the
+        # deferred block would run after Write-Log has returned, when
+        # $formattedMessage is no longer in scope, and would append nothing -
+        # leaving the console blank.
+        $utf8Message = if ($NoNewLine) { $formattedMessage } else { "$formattedMessage`n" }
+        try {
+            $Global:LogBox.Dispatcher.Invoke([action]{
                 $Global:LogBox.AppendText($utf8Message)
                 $Global:LogBox.ScrollToEnd()
-            }
-            catch {
-                # Fallback
-                if ($NoNewLine) {
-                    $Global:LogBox.AppendText($formattedMessage)
-                } else {
-                    $Global:LogBox.AppendText("$formattedMessage`n")
-                }
-                $Global:LogBox.ScrollToEnd()
-            }
-        }) | Out-Null
+            }, [System.Windows.Threading.DispatcherPriority]::Normal)
+        } catch {}
     }
     
     # Also write to console

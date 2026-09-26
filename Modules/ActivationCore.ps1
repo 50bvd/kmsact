@@ -22,32 +22,33 @@ function Invoke-CommandWithRealTimeOutput {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
     
-    # NOTE: these handlers fire on background threadpool threads.
-    # - Dispatcher.BeginInvoke (async) is used instead of Invoke (sync) so the
-    #   reader thread never blocks waiting on the UI thread.
-    # - [Application]::DoEvents() is deliberately NOT called here: pumping the
-    #   WinForms message loop from a non-UI thread is the main cause of the
-    #   freeze/jank seen during long operations (e.g. the Office setup).
+    # NOTE: these handlers fire on background threadpool threads. The line text is
+    # built here and appended via a synchronous Dispatcher.Invoke so it shows
+    # immediately (the UI thread pumps the dispatcher in the wait loop below, so
+    # this does not deadlock). An async BeginInvoke closure would run after the
+    # handler returned - when the captured value is gone - and append nothing.
+    # [Application]::DoEvents() is deliberately NOT called from these background
+    # threads: pumping the WinForms loop off the UI thread caused jank.
     $outputHandler = {
         if ($null -ne $EventArgs.Data) {
-            $line = $EventArgs.Data
+            $text = "[$(Get-Date -Format 'HH:mm:ss')] [OUT] $($EventArgs.Data)`n"
             try {
-                $Global:LogBox.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
-                    $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [OUT] $line`n")
+                $Global:LogBox.Dispatcher.Invoke([action]{
+                    $Global:LogBox.AppendText($text)
                     $Global:LogBox.ScrollToEnd()
-                }) | Out-Null
+                }, [System.Windows.Threading.DispatcherPriority]::Normal)
             } catch {}
         }
     }
 
     $errorHandler = {
         if ($null -ne $EventArgs.Data) {
-            $line = $EventArgs.Data
+            $text = "[$(Get-Date -Format 'HH:mm:ss')] [ERR] $($EventArgs.Data)`n"
             try {
-                $Global:LogBox.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
-                    $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [ERR] $line`n")
+                $Global:LogBox.Dispatcher.Invoke([action]{
+                    $Global:LogBox.AppendText($text)
                     $Global:LogBox.ScrollToEnd()
-                }) | Out-Null
+                }, [System.Windows.Threading.DispatcherPriority]::Normal)
             } catch {}
         }
     }

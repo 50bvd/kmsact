@@ -72,6 +72,11 @@ jobs:
           [void]$disp.BeginInvoke([System.Windows.Threading.DispatcherPriority]::ApplicationIdle, [action]{ $frame.Continue = $false })
           [System.Windows.Threading.Dispatcher]::PushFrame($frame)
           if ($errbag.Count -gt 0) { throw ("Dispatcher exceptions during startup: " + ($errbag -join ' || ')) }
+          # Guard against the "empty console" regression: Write-Log must actually
+          # append visible text to the log box.
+          if (-not $Global:LogBox.Text.Contains('smoke test line 1')) {
+            throw 'Console/log box did not render text written via Write-Log'
+          }
           return "SMOKE_OK"
         }
         $rs = [runspacefactory]::CreateRunspace(); $rs.ApartmentState = 'STA'; $rs.ThreadOptions = 'ReuseThread'; $rs.Open()
