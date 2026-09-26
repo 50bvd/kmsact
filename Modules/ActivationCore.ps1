@@ -32,10 +32,10 @@ function Invoke-CommandWithRealTimeOutput {
         if ($null -ne $EventArgs.Data) {
             $line = $EventArgs.Data
             try {
-                $Global:LogBox.Dispatcher.BeginInvoke([action]{
+                $Global:LogBox.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
                     $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [OUT] $line`n")
                     $Global:LogBox.ScrollToEnd()
-                }, "Background") | Out-Null
+                }) | Out-Null
             } catch {}
         }
     }
@@ -44,10 +44,10 @@ function Invoke-CommandWithRealTimeOutput {
         if ($null -ne $EventArgs.Data) {
             $line = $EventArgs.Data
             try {
-                $Global:LogBox.Dispatcher.BeginInvoke([action]{
+                $Global:LogBox.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
                     $Global:LogBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] [ERR] $line`n")
                     $Global:LogBox.ScrollToEnd()
-                }, "Background") | Out-Null
+                }) | Out-Null
             } catch {}
         }
     }

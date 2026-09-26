@@ -37,25 +37,52 @@ jobs:
             Write-Host "ok: $($_.Name)" -ForegroundColor Green
           }
         }
-        Write-Host "== XAML load ==" -ForegroundColor Cyan
-        $xamlPath = (Resolve-Path "UI\MainWindow.xaml").Path
+        Write-Host "== Startup smoke test (load window + theme + logging) ==" -ForegroundColor Cyan
+        $root = (Get-Location).Path
         $sb = {
-          param($path)
+          param($root)
           Add-Type -AssemblyName PresentationFramework
-          $content = Get-Content $path -Raw -Encoding UTF8
+          Add-Type -AssemblyName WindowsBase
+          $errbag = New-Object System.Collections.ArrayList
+          # Dot-source the same modules the app loads at startup.
+          . "$root\Resources\GlobalInit.ps1"
+          . "$root\Resources\Themes.ps1"
+          . "$root\Modules\UIHelper.ps1"
+          . "$root\Modules\ActivationCore.ps1"
+          # Load the real window.
+          $content = Get-Content "$root\UI\MainWindow.xaml" -Raw -Encoding UTF8
           $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]$content)
-          [Windows.Markup.XamlReader]::Load($reader) | Out-Null
+          $window = [Windows.Markup.XamlReader]::Load($reader)
+          $Global:MainWindow = $window
+          $Global:LogBox = $window.FindName("LogTextBox")
+          # Capture any exception raised on the dispatcher (e.g. a bad BeginInvoke
+          # overload throwing when the queued log action runs).
+          $disp = [System.Windows.Threading.Dispatcher]::CurrentDispatcher
+          $disp.add_UnhandledException([System.Windows.Threading.DispatcherUnhandledExceptionEventHandler]{
+            param($s, $e) [void]$errbag.Add($e.Exception.ToString()); $e.Handled = $true
+          })
+          # Exercise the real startup runtime paths.
+          Write-Log "smoke test line 1" "Green"
+          Write-Log "smoke test line 2" "Cyan"
+          Apply-Theme -Theme "Dark"
+          Apply-Theme -Theme "Light"
+          # Pump the dispatcher so queued BeginInvoke operations actually execute.
+          $frame = New-Object System.Windows.Threading.DispatcherFrame
+          [void]$disp.BeginInvoke([System.Windows.Threading.DispatcherPriority]::ApplicationIdle, [action]{ $frame.Continue = $false })
+          [System.Windows.Threading.Dispatcher]::PushFrame($frame)
+          if ($errbag.Count -gt 0) { throw ("Dispatcher exceptions during startup: " + ($errbag -join ' || ')) }
+          return "SMOKE_OK"
         }
         $rs = [runspacefactory]::CreateRunspace(); $rs.ApartmentState = 'STA'; $rs.ThreadOptions = 'ReuseThread'; $rs.Open()
         $psx = [powershell]::Create(); $psx.Runspace = $rs
-        [void]$psx.AddScript($sb).AddArgument($xamlPath)
-        $psx.Invoke() | Out-Null
+        [void]$psx.AddScript($sb).AddArgument($root)
+        $out = $psx.Invoke()
         if ($psx.HadErrors) {
           $fail = $true
-          Write-Host "XAML LOAD FAILED:" -ForegroundColor Red
+          Write-Host "SMOKE TEST FAILED:" -ForegroundColor Red
           $psx.Streams.Error | ForEach-Object { Write-Host "  $($_.Exception.Message)" -ForegroundColor Red }
         } else {
-          Write-Host "XAML loaded OK" -ForegroundColor Green
+          Write-Host "Smoke test OK: $out" -ForegroundColor Green
         }
         if ($fail) { throw "Validation failed" }
 
