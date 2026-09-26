@@ -118,7 +118,6 @@
 - **Original v1.0-2.0**: Basic CLI activation script
 - **v3.5 Complete Refactor**: Modern WPF application with full i18n
 - **Developer**: 50bvd
-- **Contributors**: Claude (Anthropic) for refactoring assistance
 
 ---
 

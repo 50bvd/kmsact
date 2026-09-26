@@ -1,5 +1,10 @@
 ﻿# Global Initialization - Load FIRST in monolithic build
 
+# Application version and update source. Keep AppVersion in sync with the header
+# in UI/MainWindow.xaml and the release tags (vX.Y.Z).
+$Global:AppVersion = "3.6.0"
+$Global:AppRepo = "50bvd/kmsact"
+
 # Initialize Global Config BEFORE any other module
 $Global:Config = @{
     KMSServer = "kms.50bvd.com"

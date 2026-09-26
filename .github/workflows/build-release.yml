@@ -5,15 +5,88 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version without leading v (e.g. 3.6.0-rc1). A "-" marks it as a pre-release.'
+        required: true
+        default: '3.6.0-rc1'
 
 jobs:
   build:
     runs-on: windows-latest
-    
+    permissions:
+      contents: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
+    - name: Validate scripts and XAML
+      shell: powershell
+      run: |
+        $fail = $false
+        Write-Host "== PowerShell parse ==" -ForegroundColor Cyan
+        Get-ChildItem -Recurse -Filter *.ps1 -Path . | Where-Object { $_.FullName -notmatch '\\Build\\' } | ForEach-Object {
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors) | Out-Null
+          if ($errors -and $errors.Count -gt 0) {
+            $script:fail = $true
+            Write-Host "PARSE ERRORS in $($_.FullName):" -ForegroundColor Red
+            $errors | ForEach-Object { Write-Host "  [line $($_.Extent.StartLineNumber)] $($_.Message)" -ForegroundColor Red }
+          } else {
+            Write-Host "ok: $($_.Name)" -ForegroundColor Green
+          }
+        }
+        Write-Host "== Startup smoke test (load window + theme + logging) ==" -ForegroundColor Cyan
+        $root = (Get-Location).Path
+        $sb = {
+          param($root)
+          Add-Type -AssemblyName PresentationFramework
+          Add-Type -AssemblyName WindowsBase
+          $errbag = New-Object System.Collections.ArrayList
+          # Dot-source the same modules the app loads at startup.
+          . "$root\Resources\GlobalInit.ps1"
+          . "$root\Resources\Themes.ps1"
+          . "$root\Modules\UIHelper.ps1"
+          . "$root\Modules\ActivationCore.ps1"
+          . "$root\Modules\Updater.ps1"
+          # Load the real window.
+          $content = Get-Content "$root\UI\MainWindow.xaml" -Raw -Encoding UTF8
+          $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]$content)
+          $window = [Windows.Markup.XamlReader]::Load($reader)
+          $Global:MainWindow = $window
+          $Global:LogBox = $window.FindName("LogTextBox")
+          # Capture any exception raised on the dispatcher (e.g. a bad BeginInvoke
+          # overload throwing when the queued log action runs).
+          $disp = [System.Windows.Threading.Dispatcher]::CurrentDispatcher
+          $disp.add_UnhandledException([System.Windows.Threading.DispatcherUnhandledExceptionEventHandler]{
+            param($s, $e) [void]$errbag.Add($e.Exception.ToString()); $e.Handled = $true
+          })
+          # Exercise the real startup runtime paths.
+          Write-Log "smoke test line 1" "Green"
+          Write-Log "smoke test line 2" "Cyan"
+          Apply-Theme -Theme "Dark"
+          Apply-Theme -Theme "Light"
+          # Pump the dispatcher so queued BeginInvoke operations actually execute.
+          $frame = New-Object System.Windows.Threading.DispatcherFrame
+          [void]$disp.BeginInvoke([System.Windows.Threading.DispatcherPriority]::ApplicationIdle, [action]{ $frame.Continue = $false })
+          [System.Windows.Threading.Dispatcher]::PushFrame($frame)
+          if ($errbag.Count -gt 0) { throw ("Dispatcher exceptions during startup: " + ($errbag -join ' || ')) }
+          return "SMOKE_OK"
+        }
+        $rs = [runspacefactory]::CreateRunspace(); $rs.ApartmentState = 'STA'; $rs.ThreadOptions = 'ReuseThread'; $rs.Open()
+        $psx = [powershell]::Create(); $psx.Runspace = $rs
+        [void]$psx.AddScript($sb).AddArgument($root)
+        $out = $psx.Invoke()
+        if ($psx.HadErrors) {
+          $fail = $true
+          Write-Host "SMOKE TEST FAILED:" -ForegroundColor Red
+          $psx.Streams.Error | ForEach-Object { Write-Host "  $($_.Exception.Message)" -ForegroundColor Red }
+        } else {
+          Write-Host "Smoke test OK: $out" -ForegroundColor Green
+        }
+        if ($fail) { throw "Validation failed" }
+
     - name: Install PS2EXE
       shell: powershell
       run: |
@@ -85,25 +158,46 @@ jobs:
           Write-Host "Warning: Signature status is not Valid" -ForegroundColor Yellow
         }
         
-    - name: Get version from tag
+    - name: Resolve version and tag
       id: get_version
       shell: powershell
+      env:
+        INPUT_VERSION: ${{ github.event.inputs.version }}
       run: |
         if ($env:GITHUB_REF -match 'refs/tags/v(.+)') {
           $version = $matches[1]
+        } elseif ($env:INPUT_VERSION) {
+          $version = $env:INPUT_VERSION
         } else {
           $version = "dev"
         }
+        $tag = "v$version"
+        $pre = if ($tag -match '-') { 'true' } else { 'false' }
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-        
+        echo "TAG=$tag" >> $env:GITHUB_OUTPUT
+        echo "PRERELEASE=$pre" >> $env:GITHUB_OUTPUT
+        Write-Host "Resolved version=$version tag=$tag prerelease=$pre"
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: KMS_Activator-${{ steps.get_version.outputs.VERSION }}
+        path: |
+          Build/KMS_Activator.exe
+          Build/RELEASE_INFO.txt
+        if-no-files-found: error
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: ${{ steps.get_version.outputs.TAG }}
+        target_commitish: ${{ github.sha }}
+        name: KMS Activator ${{ steps.get_version.outputs.TAG }}
         files: |
           Build/KMS_Activator.exe
           Build/RELEASE_INFO.txt
         draft: false
-        prerelease: false
+        prerelease: ${{ steps.get_version.outputs.PRERELEASE }}
         generate_release_notes: true
         body: |
           ## KMS Activator v${{ steps.get_version.outputs.VERSION }}

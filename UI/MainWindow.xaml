@@ -1,19 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MS KMS Activator - by 50bvd" 
+        Title="MS KMS Activator - by 50bvd"
         Height="820" Width="1100"
         WindowStartupLocation="CenterScreen"
-        Background="White" 
-        MinHeight="750" 
-        MinWidth="900">
-    
+        Background="{DynamicResource AppWindowBrush}"
+        MinHeight="750"
+        MinWidth="900"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType">
+
     <Window.Resources>
+        <!-- Theme brushes: light defaults here, swapped at runtime by
+             Apply-Theme / Set-AppThemeResources (UIHelper.ps1). Every themed
+             element references these via {DynamicResource ...}, so switching
+             theme is a single resource swap - no visual-tree walking, no
+             per-element hardcoded colors. -->
+        <SolidColorBrush x:Key="AppWindowBrush" Color="#F5F6F8"/>
+        <SolidColorBrush x:Key="AppCardBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AppCardBorderBrush" Color="#ECEFF3"/>
+        <SolidColorBrush x:Key="AppButtonBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AppButtonBorderBrush" Color="#E3E6EA"/>
+        <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="#1F2328"/>
+        <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="#5B6068"/>
+        <SolidColorBrush x:Key="AppTextButtonBrush" Color="#2B2F36"/>
+        <SolidColorBrush x:Key="AppAccentBrush" Color="#0078D4"/>
+        <SolidColorBrush x:Key="AppSeparatorBrush" Color="#E4E7EC"/>
+        <!-- Header gradient is intentionally shared across both themes. -->
+        <LinearGradientBrush x:Key="AppHeaderBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#0B5FB0" Offset="0"/>
+            <GradientStop Color="#0078D4" Offset="0.5"/>
+            <GradientStop Color="#2B9BE6" Offset="1"/>
+        </LinearGradientBrush>
+
         <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Background" Value="{DynamicResource AppButtonBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppTextButtonBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppButtonBorderBrush}"/>
             <Setter Property="Padding" Value="15,12"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
             <Setter Property="FontSize" Value="14"/>
@@ -23,17 +49,30 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Name="ButtonBorder"
-                                Background="{TemplateBinding Background}" 
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6" 
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                             VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#0078D4"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderThickness" Value="1.4"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.985" ScaleY="0.985"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="ButtonBorder" Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -52,14 +91,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Name="Border" Background="{TemplateBinding Background}" 
+                        <Border Name="Border" Background="{TemplateBinding Background}"
                                 CornerRadius="6"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#005A9E"/>
+                                <Setter TargetName="Border" Property="Background" Value="#33FFFFFF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -68,11 +107,16 @@
         </Style>
 
         <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="{DynamicResource AppCardBrush}"/>
+            <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="20"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" Opacity="0.12" BlurRadius="18" ShadowDepth="2" Direction="270"/>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -83,13 +127,16 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Name="HeaderBar" Grid.Row="0" Background="#0078D4" Padding="15,10">
+        <Border Name="HeaderBar" Grid.Row="0" Background="{DynamicResource AppHeaderBrush}" Padding="20,14">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" Opacity="0.25" BlurRadius="12" ShadowDepth="2" Direction="270"/>
+            </Border.Effect>
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <TextBlock Text="MS KMS Activator" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                    <TextBlock Text="v3.5" FontSize="12" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" Opacity="0.8"/>
+                    <TextBlock Text="v3.6.0" FontSize="12" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" Opacity="0.8"/>
                 </StackPanel>
-                
+
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Name="SettingsBtn" Style="{StaticResource SmallButton}" ToolTip="Settings">
                         <Viewbox Width="20" Height="20">
@@ -110,7 +157,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Name="SystemInfoText" FontSize="16" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,15"/>
+                    <TextBlock Name="SystemInfoText" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,0,0,15"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -123,17 +170,17 @@
                             <RowDefinition/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="OS:" Foreground="#666666" Margin="0,5"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Name="VersionLabel" Foreground="#0078D4" FontWeight="SemiBold" Margin="10,5"/>
-                        
-                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Edition:" Foreground="#666666" Margin="30,5,0,5"/>
-                        <TextBlock Grid.Row="0" Grid.Column="3" Name="EditionLabel" Foreground="#0078D4" FontWeight="SemiBold" Margin="10,5"/>
-                        
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Build:" Foreground="#666666" Margin="0,5"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Name="BuildLabel" Foreground="#666666" Margin="10,5"/>
-                        
-                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Arch:" Foreground="#666666" Margin="30,5,0,5"/>
-                        <TextBlock Grid.Row="1" Grid.Column="3" Name="ArchLabel" Foreground="#666666" Margin="10,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="OS:" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Name="VersionLabel" Foreground="{DynamicResource AppAccentBrush}" FontWeight="SemiBold" Margin="10,5"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Edition:" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="30,5,0,5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="3" Name="EditionLabel" Foreground="{DynamicResource AppAccentBrush}" FontWeight="SemiBold" Margin="10,5"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Build:" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="0,5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Name="BuildLabel" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="10,5"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Arch:" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="30,5,0,5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="3" Name="ArchLabel" Foreground="{DynamicResource AppTextSecondaryBrush}" Margin="10,5"/>
                     </Grid>
                 </StackPanel>
 
@@ -154,14 +201,14 @@
             <Border Name="ActionCard" Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,10,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Name="QuickActionsText" FontSize="14" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,15"/>
-                        
+                        <TextBlock Name="QuickActionsText" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,0,0,15"/>
+
                         <Button Name="ActivateWindowsBtn" Style="{StaticResource ModernButton}">
                             <StackPanel Orientation="Horizontal">
                                 <Border Background="#0078D4" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
                                     <TextBlock Text="W" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Activate Windows" VerticalAlignment="Center" Foreground="#333333"/>
+                                <TextBlock Text="Activate Windows" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
                             </StackPanel>
                         </Button>
 
@@ -170,7 +217,7 @@
                                 <Border Background="#D83B01" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
                                     <TextBlock Text="O" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Activate Office" VerticalAlignment="Center" Foreground="#333333"/>
+                                <TextBlock Text="Activate Office" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
                             </StackPanel>
                         </Button>
 
@@ -179,7 +226,7 @@
                                 <Border Background="#107C10" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
                                     <TextBlock Text="E" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Change Edition" VerticalAlignment="Center" Foreground="#333333"/>
+                                <TextBlock Text="Change Edition" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
                             </StackPanel>
                         </Button>
 
@@ -188,19 +235,19 @@
                                 <Border Background="#8661C5" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
                                     <TextBlock Text="+" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Install Office" VerticalAlignment="Center" Foreground="#333333"/>
+                                <TextBlock Text="Install Office" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
                             </StackPanel>
                         </Button>
 
-                        <Separator Margin="0,10,0,10" Background="#E0E0E0"/>
-                        <TextBlock Name="ToolsText" FontSize="14" FontWeight="Bold" Foreground="#333333" Margin="0,10,0,15"/>
+                        <Separator Margin="0,10,0,10" Background="{DynamicResource AppSeparatorBrush}"/>
+                        <TextBlock Name="ToolsText" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,10,0,15"/>
 
                         <Button Name="ScheduleTaskBtn" Style="{StaticResource ModernButton}">
                             <StackPanel Orientation="Horizontal">
                                 <Border Background="#FFB900" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
                                     <TextBlock Text="T" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Schedule Auto-Renewal" VerticalAlignment="Center" Foreground="#333333"/>
+                                <TextBlock Text="Schedule Auto-Renewal" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
                             </StackPanel>
                         </Button>
 
@@ -209,7 +256,7 @@
                                 <Border Background="#E81123" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
                                     <TextBlock Text="X" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Uninstall Keys" VerticalAlignment="Center" Foreground="#333333"/>
+                                <TextBlock Text="Uninstall Keys" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
                             </StackPanel>
                         </Button>
 
@@ -218,7 +265,16 @@
                                 <Border Background="#00B7C3" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
                                     <TextBlock Text="C" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Clear Console" VerticalAlignment="Center" Foreground="#333333"/>
+                                <TextBlock Text="Clear Console" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Name="CheckUpdateBtn" Style="{StaticResource ModernButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Background="#2B88D8" CornerRadius="4" Width="32" Height="32" Margin="0,0,10,0">
+                                    <TextBlock Text="&#x21bb;" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Check for Updates" VerticalAlignment="Center" Foreground="{DynamicResource AppTextButtonBrush}"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -232,10 +288,13 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Name="ConsoleOutputText" FontSize="14" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,15"/>
-                    
-                    <Border Grid.Row="1" Background="#0A0A0A" CornerRadius="6" Padding="15">
-                        <TextBox Name="LogTextBox" 
+                    <TextBlock Grid.Row="0" Name="ConsoleOutputText" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AppTextPrimaryBrush}" Margin="0,0,0,15"/>
+
+                    <Border Grid.Row="1" Background="#0A0A0A" CornerRadius="8" Padding="16">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="10" ShadowDepth="0"/>
+                        </Border.Effect>
+                        <TextBox Name="LogTextBox"
                                  Background="Transparent"
                                  Foreground="#00FF41"
                                  FontFamily="Cascadia Code, Consolas, Courier New, monospace"

@@ -20,6 +20,7 @@ $Global:ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$Global:ScriptRoot\Modules\ActivationCore.ps1"
 . "$Global:ScriptRoot\Modules\EditionChanger.ps1"
 . "$Global:ScriptRoot\Modules\OfficeInstaller.ps1"
+. "$Global:ScriptRoot\Modules\Updater.ps1"
 
 # Initialize language
 $Global:CurrentLanguage = Get-SystemLanguage
@@ -368,6 +369,8 @@ function Show-SettingsWindow {
                 $Global:MainWindow.FindName("ScheduleTaskBtn").Content = Get-String "scheduleTasks"
                 $Global:MainWindow.FindName("UninstallKeysBtn").Content = Get-String "uninstallKeys"
                 $Global:MainWindow.FindName("ClearLogBtn").Content = Get-String "clearLog"
+                $cuBtn = $Global:MainWindow.FindName("CheckUpdateBtn")
+                if ($cuBtn) { $cuBtn.Content = Get-String "checkUpdate" }
             }
             
             $settingsWindow.Close()
@@ -419,7 +422,8 @@ function Show-GUI {
         $scheduleTaskBtn = $window.FindName("ScheduleTaskBtn")
         $uninstallKeysBtn = $window.FindName("UninstallKeysBtn")
         $clearLogBtn = $window.FindName("ClearLogBtn")
-        
+        $checkUpdateBtn = $window.FindName("CheckUpdateBtn")
+
         $windowsInfo = Get-WindowsInfo
         if ($null -eq $windowsInfo) {
             Show-StyledMessageBox -Message "Unsupported Windows version" -Title "Error" -Buttons "OK" -Icon "Error"
@@ -443,7 +447,8 @@ function Show-GUI {
         $scheduleTaskBtn.Content = Get-String "scheduleTasks"
         $uninstallKeysBtn.Content = Get-String "uninstallKeys"
         $clearLogBtn.Content = Get-String "clearLog"
-        
+        if ($checkUpdateBtn) { $checkUpdateBtn.Content = Get-String "checkUpdate" }
+
         Write-Log (Get-AsciiArt) "Green" -NoTimestamp
         Write-Log ""
         Write-LogHeader (Get-String "started")
@@ -456,11 +461,8 @@ function Show-GUI {
         $window.Add_Loaded({
             Start-Sleep -Milliseconds 500
             
-            if ($headerBar) {
-                $headerColor = if ($Global:CurrentTheme -eq "Dark") { "#1E1E1E" } else { "#0078D4" }
-                $headerBar.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($headerColor)
-            }
-            
+            # Header keeps its AppHeaderBrush gradient in both themes; Apply-Theme
+            # swaps the DynamicResource brushes for everything else.
             Apply-Theme -Theme $Global:CurrentTheme
         })
         
@@ -498,7 +500,11 @@ function Show-GUI {
             Write-LogStep (Get-String "ready") "SUCCESS"
             Write-Log ""
         })
-        
+
+        if ($checkUpdateBtn) {
+            $checkUpdateBtn.Add_Click({ Test-ForUpdate })
+        }
+
         $window.ShowDialog() | Out-Null
     }
     catch {
