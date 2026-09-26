@@ -7,6 +7,18 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 
+# Give the process its own taskbar identity BEFORE any window is shown. Without
+# this, Windows groups the app under powershell.exe and shows the PowerShell icon
+# in the taskbar. Setting an explicit AppUserModelID makes the taskbar use the
+# window's own icon and group it as this app.
+try {
+    Add-Type -Namespace Native -Name Shell -MemberDefinition @'
+[System.Runtime.InteropServices.DllImport("shell32.dll", SetLastError = true)]
+public static extern int SetCurrentProcessExplicitAppUserModelID([System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string AppID);
+'@ -ErrorAction Stop
+    [Native.Shell]::SetCurrentProcessExplicitAppUserModelID("50bvd.KMSActivator") | Out-Null
+} catch { }
+
 # Get script root directory
 $Global:ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
@@ -397,10 +409,19 @@ function Show-GUI {
         $iconPath = Join-Path $Global:ScriptRoot "icon.ico"
         if (Test-Path $iconPath) {
             try {
-                $window.Icon = $iconPath
+                # Load as a real ImageSource (a bare path does not reliably set the
+                # taskbar icon). OnLoad + Freeze so the file handle is released and
+                # the image is usable across threads.
+                $iconImage = New-Object System.Windows.Media.Imaging.BitmapImage
+                $iconImage.BeginInit()
+                $iconImage.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+                $iconImage.UriSource = New-Object System.Uri($iconPath, [System.UriKind]::Absolute)
+                $iconImage.EndInit()
+                $iconImage.Freeze()
+                $window.Icon = $iconImage
                 Write-Host "Window icon set" -ForegroundColor Green
             } catch {
-                Write-Host "Could not set icon" -ForegroundColor Yellow
+                Write-Host "Could not set icon: $_" -ForegroundColor Yellow
             }
         }
         
