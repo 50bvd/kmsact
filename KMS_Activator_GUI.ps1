@@ -416,6 +416,11 @@ function Show-GUI {
                 $iconImage.BeginInit()
                 $iconImage.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
                 $iconImage.UriSource = New-Object System.Uri($iconPath, [System.UriKind]::Absolute)
+                # Decode the 256x256 frame of the .ico. Without this WPF picks a small
+                # frame (e.g. 32px) and Windows upscales it in the taskbar -> blurry.
+                # A 256px source is downscaled crisply to any taskbar/DPI size.
+                $iconImage.DecodePixelWidth = 256
+                $iconImage.DecodePixelHeight = 256
                 $iconImage.EndInit()
                 $iconImage.Freeze()
                 $window.Icon = $iconImage

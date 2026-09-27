@@ -98,11 +98,17 @@ namespace KMSActivator
                             psProcess.Refresh();
                             if (psProcess.MainWindowHandle != IntPtr.Zero && !iconSet && File.Exists(iconPath))
                             {
-                                IntPtr hIcon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-                                if (hIcon != IntPtr.Zero)
+                                // Load size-appropriate frames so the taskbar (big) and
+                                // title bar (small) icons are crisp instead of an upscaled
+                                // 16px default. The .ico ships frames up to 256x256.
+                                IntPtr hIconBig = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 256, 256, LR_LOADFROMFILE);
+                                IntPtr hIconSmall = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+                                if (hIconBig == IntPtr.Zero) hIconBig = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+                                if (hIconSmall == IntPtr.Zero) hIconSmall = hIconBig;
+                                if (hIconBig != IntPtr.Zero)
                                 {
-                                    SendMessage(psProcess.MainWindowHandle, WM_SETICON, new IntPtr(ICON_SMALL), hIcon);
-                                    SendMessage(psProcess.MainWindowHandle, WM_SETICON, new IntPtr(ICON_BIG), hIcon);
+                                    SendMessage(psProcess.MainWindowHandle, WM_SETICON, new IntPtr(ICON_SMALL), hIconSmall);
+                                    SendMessage(psProcess.MainWindowHandle, WM_SETICON, new IntPtr(ICON_BIG), hIconBig);
                                     iconSet = true;
                                 }
                             }
