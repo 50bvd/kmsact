@@ -8,6 +8,18 @@ using System.Security.Principal;
 using System.Runtime.InteropServices;
 using System.Threading;
 
+// Version metadata: csc emits these into the Win32 version resource, so the
+// name shows in File -> Properties -> Details and in the UAC prompt, even
+// without a paid certificate.
+[assembly: AssemblyTitle("MS KMS Activator")]
+[assembly: AssemblyDescription("KMS activation GUI for Windows and Office")]
+[assembly: AssemblyProduct("MS KMS Activator")]
+[assembly: AssemblyCompany("50bvd")]
+[assembly: AssemblyCopyright("Copyright (c) 50bvd")]
+[assembly: AssemblyVersion("3.6.0.0")]
+[assembly: AssemblyFileVersion("3.6.0.0")]
+[assembly: AssemblyInformationalVersion("3.6.0")]
+
 namespace KMSActivator
 {
     static class Program

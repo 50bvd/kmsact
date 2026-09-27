@@ -16,6 +16,10 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      # Present only once SignPath is configured (see CODE_SIGNING.md). When
+      # empty, the SignPath steps are skipped and the self-signed EXE is used.
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
 
     steps:
     - name: Checkout code
@@ -162,7 +166,31 @@ jobs:
         if ($signature.Status -ne 'Valid') {
           Write-Host "Warning: Signature status is not Valid" -ForegroundColor Yellow
         }
-        
+
+    # --- Optional: replace the self-signed signature with a SignPath Foundation
+    # (trusted, free OSS) signature when configured. Skipped when the secret is
+    # absent, so the self-signed build is used until onboarding is done.
+    - name: Upload unsigned EXE (for SignPath)
+      id: signpath_unsigned
+      if: env.SIGNPATH_API_TOKEN != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: kmsact-unsigned
+        path: Build/KMS_Activator.exe
+        retention-days: 1
+
+    - name: Sign with SignPath
+      if: env.SIGNPATH_API_TOKEN != ''
+      uses: signpath/github-action-submit-signing-request@v1
+      with:
+        api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+        organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+        project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'kmsact' }}
+        signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+        github-artifact-id: ${{ steps.signpath_unsigned.outputs.artifact-id }}
+        wait-for-completion: true
+        output-artifact-directory: Build
+
     - name: Resolve version and tag
       id: get_version
       shell: powershell
