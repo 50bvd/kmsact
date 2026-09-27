@@ -1,0 +1,44 @@
+name: Lint
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+jobs:
+  psscriptanalyzer:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run PSScriptAnalyzer
+        shell: powershell
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          $results = Invoke-ScriptAnalyzer -Path . -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.ScriptName -notmatch '\\Build\\' }
+
+          $errors   = @($results | Where-Object { $_.Severity -eq 'Error' -or $_.Severity -eq 'ParseError' })
+          $warnings = @($results | Where-Object { $_.Severity -eq 'Warning' })
+
+          if ($warnings.Count -gt 0) {
+            Write-Host "== Warnings ($($warnings.Count)) ==" -ForegroundColor Yellow
+            $warnings | ForEach-Object {
+              Write-Host ("::warning file={0},line={1}::{2} - {3}" -f $_.ScriptPath, $_.Line, $_.RuleName, $_.Message)
+            }
+          }
+
+          if ($errors.Count -gt 0) {
+            Write-Host "== Errors ($($errors.Count)) ==" -ForegroundColor Red
+            $errors | ForEach-Object {
+              Write-Host ("::error file={0},line={1}::{2} - {3}" -f $_.ScriptPath, $_.Line, $_.RuleName, $_.Message)
+            }
+            throw "PSScriptAnalyzer found $($errors.Count) error(s)."
+          }
+
+          Write-Host "No blocking (Error/ParseError) findings." -ForegroundColor Green

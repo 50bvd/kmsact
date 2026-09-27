@@ -1,0 +1,47 @@
+name: Bug report
+description: Report something that isn't working
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! Please do not include product keys, tokens or
+        other secrets in this issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: When I click ..., the app ...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown in the window header (e.g. v3.6.0)
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version / edition
+      placeholder: e.g. Windows 11 Pro 23H2 (x64)
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Paste the relevant console log. Remove any product keys first.
+      render: text
