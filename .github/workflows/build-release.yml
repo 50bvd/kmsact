@@ -221,7 +221,7 @@ jobs:
         if-no-files-found: error
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ steps.get_version.outputs.TAG }}
         target_commitish: ${{ github.sha }}
