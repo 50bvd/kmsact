@@ -1,128 +1,145 @@
-﻿# KMS Activator 
-[![Build Status](https://github.com/50bvd/kmsact/workflows/Build%20Release/badge.svg)](https://github.com/50bvd/kmsact/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/50bvd/kmsact/releases)
+# 🔑 KMS Activator
 
-A modern, feature-rich Windows and Office activation tool with a beautiful WPF interface.
+[![Lint](https://github.com/50bvd/kmsact/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/50bvd/kmsact/actions/workflows/lint.yml)
+[![Release](https://img.shields.io/github/v/release/50bvd/kmsact?include_prereleases&sort=semver)](https://github.com/50bvd/kmsact/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+A modern Windows & Office volume-activation GUI for sysadmins — a clean WPF front end over the standard `slmgr` / `ospp.vbs` tooling, pointed at a KMS host you control.
 
 ![img](https://50bvd.com/assets/img/Capture%20d'%C3%A9cran%202025-12-28%20120017.png)
 
-## Features
+## ✨ Features
 
-- **Windows Activation** - Activate all Windows editions (Pro, Education, Enterprise)
-- **Office Activation** - Activate Microsoft Office suites
-- **Edition Changer** - Upgrade from Home/Core to Pro/Enterprise editions
-- **Office Installer** - Install Office LTSC 2024 with custom components
-- **Auto-Renewal** - Schedule automatic activation renewal every 4 weeks
-- **Uninstall Keys** - Remove all product keys and reset activation
-- **Multi-language** - Support for English, French, Spanish, German, Italian
-- **Dark/Light Theme** - Modern WPF interface with theme support
-- **Configurable** - Custom KMS server settings
+- 🪟 **Windows activation** — Pro, Education, Enterprise and more
+- 📄 **Office activation** — Microsoft Office / LTSC suites
+- ⬆️ **Edition changer** — upgrade Home/Core to Pro/Enterprise
+- 📦 **Office installer** — install Office LTSC 2024 with the components you pick
+- 🔄 **Auto-renewal** — scheduled task to re-activate every 4 weeks
+- 🧹 **Uninstall keys** — remove product keys and reset activation
+- 🌍 **Multi-language** — EN, FR, DE, ES, IT
+- 🎨 **Light / Dark theme** — modern WPF interface
+- 🔔 **Update check** — tells you when a newer version is available
+- ⚙️ **Configurable KMS server** — target your own host
 
-## Installation
+## 📥 Download
 
-### Option 1: Download Release
-1. Download the latest `KMS_Activator.exe` from [Releases](https://github.com/50bvd/kmscact/releases)
-2. Run as Administrator
-3. Done!
+Get the latest version on the [releases page](https://github.com/50bvd/kmsact/releases/latest), or directly:
 
-### Option 2: Build from Source
-```powershell
-# Clone repository
-git clone https://github.com/50bvd/kmscact.git
-cd kmscact
+- **Windows**: [KMS_Activator.exe](https://github.com/50bvd/kmsact/releases/latest/download/KMS_Activator.exe)
 
-# Compile
-.\Compile.ps1
+Run it **as Administrator** (activation requires elevation). The app checks for updates and can open the download page when a newer version exists (**Tools › Check for Updates**).
 
-# Run
-.\Run.ps1
-```
+## 🚀 Quick Start
 
-## Usage
+1. Download `KMS_Activator.exe` from the [latest release](https://github.com/50bvd/kmsact/releases/latest)
+2. Right-click → **Run as administrator**
+3. Click **Activate Windows** (or **Activate Office**)
+4. Done
+
+> If Windows SmartScreen appears, click **More info → Run anyway** (the build is self-signed; see [Security](#-security)).
+
+## 📖 Usage
 
 ### Activate Windows
-1. Click **"Activate Windows"**
-2. Wait for activation to complete
-3. Done!
+1. Click **Activate Windows**
+2. Wait for the sequence to finish
 
-### Change Windows Edition
-1. Click **"Change Edition"** in Tools menu
-2. If you're on Home/Core, you'll be prompted to upgrade to Pro first
-3. Select target edition (Pro/Education/Enterprise)
-4. Wait for activation
+### Change Windows edition
+1. **Tools → Change Edition**
+2. From Home/Core you'll be prompted to upgrade to Pro first
+3. Pick the target edition (Pro / Education / Enterprise)
 
 ### Install Office
-1. Click **"Install Office"** in Tools menu
-2. Select components (Word, Excel, PowerPoint, etc.)
-3. Wait for installation
-4. Office will be automatically activated
+1. **Tools → Install Office**
+2. Select the components (Word, Excel, PowerPoint, …)
+3. Office is activated automatically once installed
 
-### Schedule Auto-Renewal
-1. Click **"Schedule Auto-Renewal"** in Tools menu
-2. A scheduled task will run every 4 weeks to renew activation
+### Schedule auto-renewal
+1. **Tools → Schedule Auto-Renewal**
+2. A scheduled task renews activation every 4 weeks
 
-## Configuration
+## ⚙️ Configuration
 
-Click the **Settings** button to configure:
-- **Language**: English, French, Spanish, German, Italian
-- **Theme**: Light or Dark mode
-- **KMS Server**: Custom KMS server address (default: kms.50bvd.com)
+Open **Settings** to configure:
 
-## Technical Details
+- **Language** — EN, FR, DE, ES, IT
+- **Theme** — Light or Dark
+- **KMS server** — your KMS host address (default: `kms.50bvd.com`)
 
-- **Framework**: PowerShell with WPF (Windows Presentation Foundation)
-- **Architecture**: Modular design with separate activation, UI, and installer modules
-- **Compilation**: Uses PS2EXE for creating standalone executable
-- **Requirements**: Windows 10/11, PowerShell 5.1+, .NET Framework 4.7.2+
+## 🛠️ Development
 
-## Project Structure
+### Prerequisites
+- Windows 10/11
+- PowerShell 5.1+
+- .NET Framework 4.7.2+ (provides `csc` for the launcher)
 
-```
-kmscact/
-â”œâ”€â”€ assets/              # Icons and images
-â”œâ”€â”€ locales/             # Translation files (JSON)
-â”œâ”€â”€ Modules/             # Core functionality modules
-â”‚   â”œâ”€â”€ ActivationCore.ps1
-â”‚   â”œâ”€â”€ EditionChanger.ps1
-â”‚   â”œâ”€â”€ MessageBoxHelper.ps1
-â”‚   â”œâ”€â”€ OfficeInstaller.ps1
-â”‚   â””â”€â”€ UIHelper.ps1
-â”œâ”€â”€ Resources/           # Configuration and themes
-â”œâ”€â”€ UI/                  # XAML interface definitions
-â”œâ”€â”€ src/                 # C# launcher source
-â”œâ”€â”€ Compile.ps1          # Build script
-â”œâ”€â”€ KMS_Activator_GUI.ps1 # Main application
-â””â”€â”€ Run.ps1              # Quick run script
+### Build
+```powershell
+git clone https://github.com/50bvd/kmsact.git
+cd kmsact
+./Compile.ps1     # builds Build/KMS_Activator.exe
+./Run.ps1         # run from source
 ```
 
-## Contributing
+The CI release build (`Compile-CI.ps1`) additionally signs the executable — see [CODE_SIGNING.md](CODE_SIGNING.md).
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 🧱 Project structure
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+```
+kmsact/
+├── assets/                 # Icons and images
+├── locales/                # Translations (JSON)
+├── Modules/                # Core modules
+│   ├── ActivationCore.ps1
+│   ├── EditionChanger.ps1
+│   ├── MessageBoxHelper.ps1
+│   ├── OfficeInstaller.ps1
+│   ├── UIHelper.ps1
+│   └── Updater.ps1
+├── Resources/              # Config, themes, languages
+├── UI/                     # XAML interface
+├── src/Launcher.cs         # C# launcher
+├── KMS_Activator_GUI.ps1   # App entry point
+├── Compile.ps1             # Build script
+└── Run.ps1                 # Quick run
+```
 
-## License
+## 🤝 Contributing
 
-This project is licensed under the MIT License.
+Contributions are welcome — bug reports, translations and code.
 
-## Disclaimer
+- Read the [contribution guide](CONTRIBUTING.md). Pull requests target the **`dev`** branch; `main` only holds released versions.
+- Test builds are produced by [Actions › Build & Release](https://github.com/50bvd/kmsact/actions/workflows/build-release.yml).
+- Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+- See the [changelog](CHANGELOG.md) for what changed in each version.
 
-This tool is for educational purposes only. Use at your own risk. The authors are not responsible for any misuse or damage caused by this software.
+## 🔒 Security
 
-## Support
+- Report vulnerabilities privately — see the [security policy](SECURITY.md), not a public issue.
+- The app runs elevated; releases carry an Authenticode signature (self-signed until a trusted certificate is configured — see [CODE_SIGNING.md](CODE_SIGNING.md)). Verify the SHA-256 in `RELEASE_INFO.txt` against your download.
 
-- Report bugs: [Issues](https://github.com/50bvd/kmscact/issues)
-- Discussions: [Discussions](https://github.com/50bvd/kmscact/discussions)
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## 👤 Author
+
+**Loup LIGNON KRASNIQI**
+- GitHub: [@50bvd](https://github.com/50bvd)
+- Email: loup.lk-pro@protonmail.ch
+
+## ⚠️ Disclaimer
+
+This tool provides a GUI over Microsoft's own volume-activation commands and is
+intended for **legitimate activation against a KMS host you are authorized to
+use**. You are responsible for holding the appropriate volume licenses. The
+author is not responsible for misuse.
+
+## 🙏 Acknowledgments
+
+- Built with **PowerShell** and **WPF** (Windows Presentation Foundation)
+- Packaged as a single executable via a small C# launcher
 
 ---
 
-If you find this project useful, please give it a star!
-
-
-
-
+**⭐ Star this repo if you find it useful!**
